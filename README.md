@@ -1,4 +1,4 @@
-# IrrigaTech
+# 🌱 IrrigaTech
 
 ## Sobre o projeto
 
