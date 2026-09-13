@@ -1,0 +1,2 @@
+﻿// Modelo de dados: Relatório
+
