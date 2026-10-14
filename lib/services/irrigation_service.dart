@@ -1,6 +1,7 @@
 import 'package:flutter/foundation.dart';
 import '../models/alert_model.dart';
 import '../models/sector_model.dart';
+import 'api_service.dart';
 
 class IrrigationService extends ChangeNotifier {
   int _currentTabIndex = 0;
@@ -9,6 +10,7 @@ class IrrigationService extends ChangeNotifier {
   double _minMoistureTrigger = 30.0;
   double _maxMoistureCutoff = 75.0;
   String _selectedSectorId = 'setor_a';
+  bool _isBackendOnline = false;
 
   List<SectorModel> _sectors = [
     const SectorModel(
@@ -76,6 +78,25 @@ class IrrigationService extends ChangeNotifier {
     ),
   ];
 
+  IrrigationService() {
+    initBackendSync();
+  }
+
+  Future<void> initBackendSync() async {
+    _isBackendOnline = await ApiService.isBackendOnline();
+    if (_isBackendOnline) {
+      final remoteSectors = await ApiService.fetchSectors();
+      if (remoteSectors != null && remoteSectors.isNotEmpty) {
+        _sectors = remoteSectors;
+      }
+      final dashboard = await ApiService.fetchDashboardSummary();
+      if (dashboard != null) {
+        _isSystemActive = dashboard['isSystemActive'] ?? _isSystemActive;
+      }
+      notifyListeners();
+    }
+  }
+
   // Getters
   int get currentTabIndex => _currentTabIndex;
   bool get isSystemActive => _isSystemActive;
@@ -83,6 +104,7 @@ class IrrigationService extends ChangeNotifier {
   double get minMoistureTrigger => _minMoistureTrigger;
   double get maxMoistureCutoff => _maxMoistureCutoff;
   String get selectedSectorId => _selectedSectorId;
+  bool get isBackendOnline => _isBackendOnline;
   List<SectorModel> get sectors => List.unmodifiable(_sectors);
   List<AlertModel> get alerts => List.unmodifiable(_alerts);
 
@@ -107,13 +129,13 @@ class IrrigationService extends ChangeNotifier {
   void setOperationMode(String mode) {
     _operationMode = mode;
     notifyListeners();
+    ApiService.setOperationMode(mode);
   }
 
   void toggleSectorIrrigation(String sectorId) {
     _sectors = _sectors.map((sector) {
       if (sector.id == sectorId) {
         if (sector.status == SectorStatus.error) {
-          // Cannot toggle an error sector directly
           return sector;
         }
         final isCurrentlyOn = sector.status == SectorStatus.irrigating;
@@ -125,6 +147,7 @@ class IrrigationService extends ChangeNotifier {
       return sector;
     }).toList();
     notifyListeners();
+    ApiService.toggleSector(sectorId);
   }
 
   void setSectorFlowRate(String sectorId, double rate) {
@@ -135,23 +158,27 @@ class IrrigationService extends ChangeNotifier {
       return sector;
     }).toList();
     notifyListeners();
+    ApiService.setFlowRate(sectorId, rate);
   }
 
   void emergencyStop() {
     _isSystemActive = false;
     _sectors = _sectors.map((s) => s.copyWith(status: SectorStatus.idle, flowRate: 0.0)).toList();
     notifyListeners();
+    ApiService.emergencyStop();
   }
 
   void resumeSystem() {
     _isSystemActive = true;
     notifyListeners();
+    ApiService.resumeSystem();
   }
 
   void updateParameters(double min, double max) {
     _minMoistureTrigger = min;
     _maxMoistureCutoff = max;
     notifyListeners();
+    ApiService.updateParameters(min, max);
   }
 
   void dismissAlert(String alertId) {

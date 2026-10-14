@@ -1,0 +1,20 @@
+{
+  "name": "irrigatech-backend",
+  "version": "1.0.0",
+  "description": "IrrigaTech Smart Irrigation System Backend API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js"
+  },
+  "keywords": ["irrigation", "iot", "smart-farming", "irrigatech"],
+  "author": "Victor Koba",
+  "license": "MIT",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "morgan": "^1.10.0",
+    "pg": "^8.13.1"
+  }
+}
