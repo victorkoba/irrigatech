@@ -1,5 +1,53 @@
 # 🌱 IrrigaTech
 
+## Como executar o projeto
+
+### Pré-requisitos
+* [Flutter SDK](https://docs.flutter.dev/get-started/install) (versão 3.13.3 ou superior)
+* [Git](https://git-scm.com/)
+* Navegador **Google Chrome** (para execução Web) ou **Android Studio / Emulador** (para execução Mobile)
+* *(No Windows)* Modo de desenvolvedor ativado nas configurações do sistema (`start ms-settings:developers`)
+
+### Passo a passo
+
+1. **Clonar o repositório:**
+   ```bash
+   git clone https://github.com/victorkoba/irrigatech.git
+   cd irrigatech
+   ```
+
+2. **Instalar as dependências:**
+   ```bash
+   flutter pub get
+   ```
+
+3. **Verificar os dispositivos disponíveis:**
+   ```bash
+   flutter devices
+   ```
+
+4. **Executar a aplicação:**
+   * **Web (Chrome):**
+     ```bash
+     flutter run -d chrome
+     ```
+   * **Android:**
+     ```bash
+     flutter run -d android
+     ```
+   * **Windows Desktop:**
+     ```bash
+     flutter run -d windows
+     ```
+
+### Executando pelo VS Code
+1. Abra a pasta do projeto no VS Code (`code .`).
+2. Certifique-se de que a extensão oficial **Flutter** (Dart-Code) está instalada.
+3. Selecione o dispositivo desejado no seletor de dispositivos na barra de status inferior.
+4. Pressione `F5` (ou vá em **Run > Start Debugging**) para iniciar a aplicação.
+
+---
+
 ## Sobre o projeto
 
 A IrrigaTech é um **Sistema Inteligente para o Agronegócio**, uma solução de automação e monitoramento inteligente da irrigação agrícola, desenvolvida para reduzir o desperdício de água e energia, melhorar a produtividade e facilitar o gerenciamento das propriedades rurais.
