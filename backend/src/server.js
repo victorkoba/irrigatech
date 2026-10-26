@@ -6,6 +6,7 @@ require('dotenv').config();
 const db = require('./config/db');
 
 // Import routes
+const authRoutes = require('./routes/authRoutes');
 const dashboardRoutes = require('./routes/dashboardRoutes');
 const sectorRoutes = require('./routes/sectorRoutes');
 const irrigationRoutes = require('./routes/irrigationRoutes');
@@ -38,13 +39,14 @@ app.get('/api/health', (req, res) => {
 });
 
 // Mount modular routes
+app.use('/api/auth', authRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/sectors', sectorRoutes);
 app.use('/api/irrigation', irrigationRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/reports', reportRoutes);
 
-// Fallback 404
+// Fallback 404 (precisa ficar por último)
 app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint não encontrado', path: req.originalUrl });
 });
@@ -54,6 +56,8 @@ app.listen(PORT, () => {
   console.log(`🌱 IrrigaTech Backend rodando em http://localhost:${PORT}`);
   console.log(`📡 Endpoints disponíveis:`);
   console.log(`   - GET  /api/health`);
+  console.log(`   - POST /api/auth/register`);
+  console.log(`   - POST /api/auth/login`);
   console.log(`   - GET  /api/dashboard/summary`);
   console.log(`   - GET  /api/sectors`);
   console.log(`   - POST /api/sectors/:id/toggle`);
