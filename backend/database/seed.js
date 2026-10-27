@@ -41,6 +41,7 @@ async function runSeed() {
 
     // 3. Count rows in each table to give feedback
     const tables = [
+      'users',
       'sectors',
       'sensor_readings',
       'alerts',

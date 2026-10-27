@@ -8,6 +8,15 @@ let fallbackSectors = [
   { id: 'setor_e', name: 'Setor E', region: 'Central', status: 'idle', flowRate: 0.0, moisture: 58.0, temperature: 26.0 },
 ];
 
+exports.stopAllFallbackSectors = () => {
+  fallbackSectors.forEach(s => {
+    if (s.status === 'irrigating') {
+      s.status = 'idle';
+      s.flowRate = 0.0;
+    }
+  });
+};
+
 exports.getAllSectors = async (req, res) => {
   try {
     if (db.isDbConnected()) {

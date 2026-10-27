@@ -11,6 +11,17 @@ DROP TABLE IF EXISTS sensor_readings CASCADE;
 DROP TABLE IF EXISTS alerts CASCADE;
 DROP TABLE IF EXISTS sectors CASCADE;
 DROP TABLE IF EXISTS automation_settings CASCADE;
+DROP TABLE IF EXISTS users CASCADE;
+
+-- 0. Users & Authentication
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    email VARCHAR(150) UNIQUE NOT NULL,
+    password_hash VARCHAR(255) NOT NULL,
+    role VARCHAR(50) NOT NULL DEFAULT 'operator',
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
 
 -- 1. Automation & System Settings
 CREATE TABLE automation_settings (
@@ -98,6 +109,11 @@ CREATE TABLE weekly_consumption (
 -- ==========================================================
 -- 🌾 Initial Seed Data
 -- ==========================================================
+
+-- Default Users (Password: 123456)
+INSERT INTO users (name, email, password_hash, role) VALUES
+('Operador IrrigaTech', 'operador@irrigatech.com', '$2b$10$iCAmiKUfYuCnsZqcu9xeVO0wPMhAzVDHR4RNPI0H0e2ALNUiHZ2F2', 'operator'),
+('Administrador', 'admin@irrigatech.com', '$2b$10$iCAmiKUfYuCnsZqcu9xeVO0wPMhAzVDHR4RNPI0H0e2ALNUiHZ2F2', 'admin');
 
 -- Settings
 INSERT INTO automation_settings (is_system_active, operation_mode, min_moisture_trigger, max_moisture_cutoff, next_irrigation_time, next_irrigation_sectors, daily_progress_pct)

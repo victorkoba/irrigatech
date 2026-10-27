@@ -51,22 +51,26 @@ app.use((req, res) => {
   res.status(404).json({ error: 'Endpoint não encontrado', path: req.originalUrl });
 });
 
-app.listen(PORT, () => {
-  console.log(`\n==================================================`);
-  console.log(`🌱 IrrigaTech Backend rodando em http://localhost:${PORT}`);
-  console.log(`📡 Endpoints disponíveis:`);
-  console.log(`   - GET  /api/health`);
-  console.log(`   - POST /api/auth/register`);
-  console.log(`   - POST /api/auth/login`);
-  console.log(`   - GET  /api/dashboard/summary`);
-  console.log(`   - GET  /api/sectors`);
-  console.log(`   - POST /api/sectors/:id/toggle`);
-  console.log(`   - PUT  /api/sectors/:id/flow-rate`);
-  console.log(`   - POST /api/irrigation/emergency-stop`);
-  console.log(`   - PUT  /api/irrigation/mode`);
-  console.log(`   - PUT  /api/irrigation/parameters`);
-  console.log(`   - GET  /api/monitoring/readings/:sectorId`);
-  console.log(`   - GET  /api/monitoring/weekly-comparison`);
-  console.log(`   - GET  /api/reports/overview`);
-  console.log(`==================================================\n`);
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`\n==================================================`);
+    console.log(`🌱 IrrigaTech Backend rodando em http://localhost:${PORT}`);
+    console.log(`📡 Endpoints disponíveis:`);
+    console.log(`   - GET  /api/health`);
+    console.log(`   - POST /api/auth/register`);
+    console.log(`   - POST /api/auth/login`);
+    console.log(`   - GET  /api/dashboard/summary`);
+    console.log(`   - GET  /api/sectors`);
+    console.log(`   - POST /api/sectors/:id/toggle`);
+    console.log(`   - PUT  /api/sectors/:id/flow-rate`);
+    console.log(`   - POST /api/irrigation/emergency-stop`);
+    console.log(`   - PUT  /api/irrigation/mode`);
+    console.log(`   - PUT  /api/irrigation/parameters`);
+    console.log(`   - GET  /api/monitoring/readings/:sectorId`);
+    console.log(`   - GET  /api/monitoring/weekly-comparison`);
+    console.log(`   - GET  /api/reports/overview`);
+    console.log(`==================================================\n`);
+  });
+}
+
+module.exports = app;

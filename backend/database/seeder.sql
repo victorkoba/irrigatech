@@ -14,6 +14,12 @@ TRUNCATE TABLE sensor_readings CASCADE;
 TRUNCATE TABLE alerts CASCADE;
 TRUNCATE TABLE sectors CASCADE;
 TRUNCATE TABLE automation_settings CASCADE;
+TRUNCATE TABLE users CASCADE;
+
+-- 1.1 Usuários Padrão (Senha: 123456)
+INSERT INTO users (name, email, password_hash, role) VALUES
+('Operador IrrigaTech', 'operador@irrigatech.com', '$2b$10$iCAmiKUfYuCnsZqcu9xeVO0wPMhAzVDHR4RNPI0H0e2ALNUiHZ2F2', 'operator'),
+('Administrador', 'admin@irrigatech.com', '$2b$10$iCAmiKUfYuCnsZqcu9xeVO0wPMhAzVDHR4RNPI0H0e2ALNUiHZ2F2', 'admin');
 
 -- 2. Configurações de Automação
 INSERT INTO automation_settings (

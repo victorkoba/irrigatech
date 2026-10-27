@@ -1,50 +1,109 @@
-# 🌱 IrrigaTech
+# IrrigaTech — Sistema Inteligente de Irrigação Agrícola
 
-## Como executar o projeto
+Plataforma integrada de Internet das Coisas (IoT), automação de pivôs de irrigação, telemetria de umidade de solo e inteligência sustentável para o agronegócio.
+
+---
+
+## Como Executar a Aplicação Completa
+
+A solução é composta por **três camadas integradas**:
+1. **Banco de Dados Relacional:** PostgreSQL 14+ (Docker ou instalação local na porta `5432`).
+2. **Back-end de Automação:** API REST em Node.js / Express na porta `3000`.
+3. **Front-end Responsivo:** Aplicativo em Flutter (Web Chrome, Mobile Android e Desktop).
+
+---
 
 ### Pré-requisitos
+* [Node.js](https://nodejs.org/) (versão 18.x ou superior) e `npm`
 * [Flutter SDK](https://docs.flutter.dev/get-started/install) (versão 3.13.3 ou superior)
+* [Docker Desktop](https://www.docker.com/) *(opcional, recomendado para subir o PostgreSQL em 1 clique)* ou PostgreSQL local na porta 5432
 * [Git](https://git-scm.com/)
-* Navegador **Google Chrome** (para execução Web) ou **Android Studio / Emulador** (para execução Mobile)
-* *(No Windows)* Modo de desenvolvedor ativado nas configurações do sistema (`start ms-settings:developers`)
+* Navegador **Google Chrome** (para execução Web) ou **Emulador Android / VS Code**
 
-### Passo a passo
+---
 
-1. **Clonar o repositório:**
-   ```bash
-   git clone https://github.com/victorkoba/irrigatech.git
-   cd irrigatech
-   ```
+### 1. Inicializar o Banco de Dados e Migrations
 
-2. **Instalar as dependências:**
-   ```bash
-   flutter pub get
-   ```
+Abra um terminal no diretório do projeto:
 
-3. **Verificar os dispositivos disponíveis:**
-   ```bash
-   flutter devices
-   ```
+```bash
+# 1. Navegue até a pasta do backend
+cd backend
 
-4. **Executar a aplicação:**
-   * **Web (Chrome):**
-     ```bash
-     flutter run -d chrome
-     ```
-   * **Android:**
-     ```bash
-     flutter run -d android
-     ```
-   * **Windows Desktop:**
-     ```bash
-     flutter run -d windows
-     ```
+# 2. Suba o container PostgreSQL (caso utilize Docker)
+docker compose up -d
 
-### Executando pelo VS Code
-1. Abra a pasta do projeto no VS Code (`code .`).
-2. Certifique-se de que a extensão oficial **Flutter** (Dart-Code) está instalada.
-3. Selecione o dispositivo desejado no seletor de dispositivos na barra de status inferior.
-4. Pressione `F5` (ou vá em **Run > Start Debugging**) para iniciar a aplicação.
+# 3. Instale as dependências do backend
+npm install
+
+# 4. Execute as migrations para provisionar tabelas e dados iniciais
+npm run migrate
+```
+
+> **Nota de Resiliência:** O backend possui arquitetura de dupla resiliência: caso o PostgreSQL não esteja rodando, ele chaveia automaticamente para o modo em memória (*in-memory fallback*), permitindo testar o app mesmo sem banco ativo. Com o PostgreSQL ativo, as migrations são verificadas e aplicadas automaticamente na inicialização.
+
+---
+
+### 2. Executar e Testar o Back-end
+
+No diretório `backend`:
+
+```bash
+# Iniciar a API em modo desenvolvimento (auto-reload)
+npm run dev
+
+# Ou em modo produção
+npm start
+
+# Executar a bateria de testes automatizados de integração (25 testes)
+npm test
+```
+
+* API REST ativa em: **`http://localhost:3000`**
+* Health Check: **`http://localhost:3000/api/health`**
+
+---
+
+### 3. Executar e Testar o Front-end (Flutter)
+
+Abra outro terminal na raiz do projeto (`irrigatech`):
+
+```bash
+# 1. Instalar as dependências do Flutter
+flutter pub get
+
+# 2. Executar os testes automatizados da interface e modelos (24 testes)
+flutter test
+
+# 3. Executar o aplicativo no Google Chrome
+flutter run -d chrome
+
+# Ou em dispositivo Android
+# flutter run -d android
+```
+
+---
+
+### Credenciais Padrão de Acesso
+
+Ao abrir a tela de Login no aplicativo ou autenticar via API (`POST /api/auth/login`):
+* **E-mail:** `operador@irrigatech.com`
+* **Senha:** `123456`
+* *Ou cadastre uma nova conta diretamente na tela de Registro do aplicativo!*
+
+---
+
+### Documentação Técnica e Entregáveis
+
+Os manuais de engenharia, especificações técnicas e evidências de testes estão disponíveis em formato Markdown no repositório:
+
+| Documento | Formato | Descrição |
+|:---|:---:|:---|
+| **Manual da API REST** | [MD](./DOCUMENTACAO_API.md) | Catálogo de endpoints, contratos JSON e especificações de integração |
+| **Evidências de Testes** | [MD](./EVIDENCIAS_TESTES.md) | Relatório de 49 testes automatizados (unitários, integração e widgets) |
+| **Registro de Engenharia** | [MD](./REGISTRO_DIFICULDADES_DECISOES.md) | Dificuldades enfrentadas, decisões de arquitetura e mudanças de escopo |
+
+> **Nota:** As versões compiladas em PDF para entrega executiva e as capturas de evidências em imagem são armazenadas externamente na pasta `Documents/irrigatech_entregaveis` e nos downloads locais (`irrigatech_database.sql`).
 
 ---
 
@@ -77,73 +136,49 @@ Visando sempre reduzir a necessidade de intervenção humana e falhas do process
 
 O produtor também poderá acompanhar as informações e controlar o sistema remotamente por meio de um **aplicativo mobile**, permitindo maior praticidade e controle da operação.
 
-## Etapas
+## Etapas Operacionais
 
 1. **Coleta:** sensores captam informações do solo e das condições climáticas.
 2. **Transmissão:** os dados são enviados ao sistema por meio da conectividade disponível no campo.
-3. **Processamento:** o backend analisa os dados recebidos.
-4. **Automação:** o sistema determina a necessidade de irrigação e pode acionar os equipamentos.
-5. **Monitoramento:** o produtor acompanha as informações pelo aplicativo.
+3. **Processamento:** o backend analisa os dados recebidos e consulta parâmetros agronômicos.
+4. **Automação:** o sistema determina a necessidade de irrigação e aciona/desliga as válvulas.
+5. **Monitoramento:** o produtor acompanha as informações e alertas pelo aplicativo.
 6. **Relatórios:** o sistema registra dados históricos e apresenta indicadores de consumo e desempenho.
 
-## Relatórios e indicadores
+## Relatórios e Indicadores
 
-O sistema deverá permitir a geração de relatórios automáticos para facilitar a análise dos resultados.
+O sistema permite a geração de relatórios automáticos para facilitar a análise dos resultados:
 
-Entre os principais indicadores estão:
-
-* Consumo de água;
-* Economia de água;
-* Consumo de energia;
-* Economia de energia;
+* Consumo de água em m³;
+* Economia percentual de água;
+* Consumo de energia em kWh;
+* Economia percentual de energia;
 * Tempo de funcionamento da irrigação;
-* Histórico de acionamentos;
-* Condições de umidade do solo;
-* Evolução da produtividade.
+* Histórico de acionamentos e paradas de segurança;
+* Condições de umidade do solo por setor;
+* Evolução da produtividade (sacas/ha).
 
-Essas informações também poderão contribuir para processos relacionados à **certificação ambiental e obtenção de crédito rural sustentável**.
-
-## Usuários e stakeholders
+## Usuários e Stakeholders
 
 ### Usuários principais
-
-**Produtores rurais e gestores de propriedades agrícolas**
-
-Responsáveis pelo acompanhamento e gerenciamento da irrigação.
+**Produtores rurais e gestores de propriedades agrícolas** responsáveis pelo acompanhamento e gerenciamento da irrigação.
 
 ### Usuários secundários e stakeholders
-
 * Equipe técnica e operacional de campo;
 * Gestores corporativos do agronegócio;
 * Órgãos de certificação ambiental;
-* Instituições financeiras;
-* Demais responsáveis pela análise de eficiência e sustentabilidade da produção.
-
-## Objetivos
-
-Desenvolver um sistema inteligente, acessível e automatizado para monitoramento e controle da irrigação agrícola, utilizando dados em tempo real para otimizar o uso de recursos e melhorar a eficiência da produção.
-
-* Automatizar o acionamento da irrigação;
-* Monitorar a umidade do solo em tempo real;
-* Integrar dados climáticos ao processo de decisão;
-* Reduzir o desperdício de água;
-* Reduzir o consumo de energia;
-* Facilitar o gerenciamento remoto da irrigação;
-* Disponibilizar dados históricos para análise;
-* Gerar relatórios de eficiência;
-* Apoiar decisões relacionadas à sustentabilidade;
-* Desenvolver uma solução com custo inferior ao de alternativas importadas.
+* Instituições financeiras para crédito rural verde.
 
 ## Equipe
 
-| Nº | Integrante                  |
-| -: | --------------------------- |
+| Nº | Integrante |
+| -: | :--- |
 | 01 | Enrico Augusto Pereira Naba |
-| 02 | João Gustavo Mota Ramos     |
+| 02 | João Gustavo Mota Ramos |
 | 03 | João Pedro da Cunha Machado |
-| 04 | Rodrigo Santos Graça        |
-| 05 | Victor Luiz Koba Batista    |
-| 06 | Vitório Fraga Motta         |
+| 04 | Rodrigo Santos Graça |
+| 05 | Victor Luiz Koba Batista |
+| 06 | Vitório Fraga Motta |
 
 ---
 

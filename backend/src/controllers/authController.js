@@ -7,7 +7,15 @@ const JWT_EXPIRES_IN = '7d';
 
 // Fallback em memória (usado quando o PostgreSQL está offline).
 // Os usuários somem quando o servidor reinicia.
-const memoryUsers = [];
+const memoryUsers = [
+  {
+    id: 1,
+    name: 'Operador IrrigaTech',
+    email: 'operador@irrigatech.com',
+    password_hash: '$2b$10$iCAmiKUfYuCnsZqcu9xeVO0wPMhAzVDHR4RNPI0H0e2ALNUiHZ2F2',
+    role: 'operator',
+  },
+];
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 

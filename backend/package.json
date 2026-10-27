@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "node --watch src/server.js",
-    "seed": "node database/seed.js"
+    "migrate": "node database/migrate.js",
+    "seed": "node database/seed.js",
+    "test": "node --test test/**/*.test.js"
   },
   "keywords": [
     "irrigation",

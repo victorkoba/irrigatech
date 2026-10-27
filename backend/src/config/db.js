@@ -1,5 +1,7 @@
 const { Pool } = require('pg');
-require('dotenv').config();
+const path = require('path');
+require('dotenv').config({ path: path.join(__dirname, '../../.env') });
+const { runMigrations } = require('../../database/migrate');
 
 let isConnected = false;
 
@@ -18,6 +20,13 @@ async function checkDatabaseConnection() {
     isConnected = true;
     console.log('✅ [Database] Conexão com PostgreSQL estabelecida com sucesso!');
     client.release();
+
+    // Auto-migração para garantir schema atualizado
+    try {
+      await runMigrations(pool);
+    } catch (migErr) {
+      console.error('⚠️ [Database] Falha ao executar migrations automáticas:', migErr.message);
+    }
   } catch (err) {
     isConnected = false;
     console.log('⚠️ [Database] PostgreSQL offline no momento. O backend está operando em modo de memória seguro.');
@@ -31,5 +40,6 @@ checkDatabaseConnection();
 module.exports = {
   pool,
   isDbConnected: () => isConnected,
+  checkDatabaseConnection,
   query: (text, params) => pool.query(text, params),
 };

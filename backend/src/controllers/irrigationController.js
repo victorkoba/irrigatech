@@ -1,4 +1,5 @@
 const db = require('../config/db');
+const sectorController = require('./sectorController');
 
 let fallbackSettings = {
   isSystemActive: true,
@@ -36,6 +37,7 @@ exports.emergencyStop = async (req, res) => {
       return res.json({ message: 'Parada de emergência executada.', isSystemActive: false });
     }
     fallbackSettings.isSystemActive = false;
+    sectorController.stopAllFallbackSectors();
     return res.json({ message: 'Parada de emergência executada.', isSystemActive: false });
   } catch (error) {
     console.error('Error executing emergency stop:', error);

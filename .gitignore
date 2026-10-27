@@ -46,3 +46,9 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Entregáveis compilados e imagens (armazenados em Documents/irrigatech_entregaveis)
+*.pdf
+*.html
+/docs/
+backend/.env
