@@ -286,6 +286,37 @@ Lista todos os setores agrícolas da fazenda com status operacional (`irrigating
 
 ---
 
+#### `POST /api/sectors`
+Cadastra um novo setor de irrigação no sistema (persistido no PostgreSQL).
+* **Campos Obrigatórios:** `name` (string) e `region` (string).
+* **Campos Opcionais:** `moisture` (numeric, default 50.0), `temperature` (numeric, default 25.0).
+
+* **Corpo da Requisição (Body):**
+```json
+{
+  "name": "Setor F",
+  "region": "Noroeste",
+  "moisture": 52.0,
+  "temperature": 24.5
+}
+```
+
+* **Especificação do Retorno (201 Created):**
+```json
+{
+  "id": "setor_setor_f_1234",
+  "name": "Setor F",
+  "region": "Noroeste",
+  "status": "idle",
+  "flowRate": 0,
+  "moisture": 52,
+  "temperature": 24.5,
+  "alertMessage": null
+}
+```
+
+---
+
 #### `POST /api/sectors/:id/toggle`
 Liga ou desliga a irrigação de um setor específico.  
 * **Regra de Segurança:** Setores em estado `error` (ex.: vazamento, pane mecânica) são estritamente bloqueados contra acionamento acidental.
@@ -339,7 +370,9 @@ Ajusta finamente a vazão hidráulica de um setor em operação.
 ### 5. Automação e Parada de Emergência
 
 #### `POST /api/irrigation/emergency-stop`
-Protocolo de corte total de água: desliga instantaneamente todos os setores em irrigação (`status: idle`, `flowRate: 0.0`) e desativa a operação global por segurança.
+Protocolo de corte total de água:
+1. **Snapshot de Estado:** Salva o snapshot dos setores que estavam em operação ativa (`status = 'irrigating'`) e suas respectivas vazões hídricas (`flow_rate`) antes da interrupção.
+2. **Corte Total:** Desliga instantaneamente todos os setores em irrigação (`status: idle`, `flowRate: 0.0`) e desativa a operação global (`is_system_active = false`) por segurança.
 
 * **Evidência no Postman:**
 ![Postman POST Emergency Stop](docs/postman/postman_emergency_stop.png)
@@ -348,22 +381,39 @@ Protocolo de corte total de água: desliga instantaneamente todos os setores em 
 ```json
 {
   "message": "Parada de emergência executada.",
-  "isSystemActive": false
+  "isSystemActive": false,
+  "savedSectors": [
+    {
+      "id": "setor_a",
+      "flow_rate": 45.0
+    }
+  ]
 }
 ```
 
 ---
 
 #### `POST /api/irrigation/resume`
-Reativa os solenoides e circuitos de automação após normalização de emergência.
+Reativa os solenoides e circuitos de automação após normalização de emergência:
+1. **Restauração Inteligente:** Recupera os setores salvos no snapshot anterior e restabelece a irrigação (`status = 'irrigating'`) com suas vazões originais.
+2. **Sincronização de Status:** Atualiza `automation_settings.is_system_active = true` e notifica o painel. Caso nenhum setor estivesse ativo no momento do stop, reativa o setor primário por padrão.
 
 * **Exemplo de Resposta (200 OK):**
 ```json
 {
   "message": "Sistema reativado.",
-  "isSystemActive": true
+  "isSystemActive": true,
+  "restoredSectors": [
+    {
+      "id": "setor_a",
+      "flow_rate": 45.0
+    }
+  ]
 }
 ```
+
+> [!NOTE]
+> **Reativação Automática por Acionamento Individual:** Caso o operador ative manualmente qualquer setor individualmente (via `POST /api/sectors/:id/toggle` ou Switch na interface) enquanto o sistema estiver em estado suspenso, o status geral do sistema é reativado imediatamente para `SISTEMA ATIVO`, garantindo total consistência na Dashboard.
 
 ---
 
@@ -393,6 +443,135 @@ Configura os gatilhos agronômicos de umidade do solo: corte mínimo para ligar 
 {
   "minMoistureTrigger": 30,
   "maxMoistureCutoff": 90
+}
+```
+
+---
+
+#### `GET /api/irrigation/schedule`
+Retorna a programação da próxima irrigação gravada no banco de dados relacional na tabela `automation_settings`.
+
+* **Especificação do Retorno (200 OK):**
+```json
+{
+  "time": "14:30",
+  "sectors": "Setores B e D (Milho)",
+  "dailyProgressPct": 65.0
+}
+```
+
+---
+
+#### `PUT /api/irrigation/schedule`
+Atualiza a programação da próxima irrigação diretamente no PostgreSQL, refletindo em tempo real tanto no banner da Dashboard quanto na aba de Controle.
+
+* **Payload de Envio (JSON):**
+```json
+{
+  "time": "16:45",
+  "sectors": "Setores A e B (Milho)",
+  "dailyProgressPct": 80.0
+}
+```
+
+* **Especificação do Retorno (200 OK):**
+```json
+{
+  "message": "Agendamento de irrigação atualizado com sucesso",
+  "schedule": {
+    "time": "16:45",
+    "sectors": "Setores A e B (Milho)",
+    "dailyProgressPct": 80.0
+  }
+}
+```
+
+---
+
+### 6. Gestão e Manipulação de Alertas no Banco de Dados
+
+Os alertas operacionais e críticos da fazenda são gravados e manipulados de forma relacional na tabela `alerts` do PostgreSQL, garantindo rastreabilidade, histórico de auditoria e resolução em tempo real.
+
+#### `GET /api/alerts`
+Retorna a lista de alertas ativos do banco de dados (por padrão `is_resolved = false`). Permite o parâmetro opcional `?all=true` para auditoria histórica de alertas já resolvidos.
+
+* **Especificação do Retorno (200 OK):**
+```json
+[
+  {
+    "id": "alert_1",
+    "sectorId": "setor_a",
+    "title": "Umidade baixa no Setor A",
+    "description": "Níveis abaixo de 15%. Irrigação de emergência recomendada.",
+    "severity": "critical",
+    "isResolved": false,
+    "createdAt": "2026-10-27T22:00:00.000Z",
+    "timestamp": "2026-10-27T22:00:00.000Z"
+  }
+]
+```
+
+---
+
+#### `POST /api/alerts`
+Grava um novo alerta no banco de dados emitido por rotinas de telemetria IoT ou operadores de campo.
+
+* **Payload de Envio (JSON):**
+```json
+{
+  "title": "Pressão irregular na linha mestre",
+  "description": "Sensor de pressão indicou queda súbita no Setor B.",
+  "severity": "warning",
+  "sectorId": "setor_b"
+}
+```
+
+* **Especificação do Retorno (201 Created):**
+```json
+{
+  "id": "alert_1793150215399_952",
+  "sectorId": "setor_b",
+  "title": "Pressão irregular na linha mestre",
+  "description": "Sensor de pressão indicou queda súbita no Setor B.",
+  "severity": "warning",
+  "isResolved": false,
+  "createdAt": "2026-10-27T22:15:00.000Z",
+  "timestamp": "2026-10-27T22:15:00.000Z"
+}
+```
+
+---
+
+#### `PUT /api/alerts/:id/resolve`
+Marca o alerta como resolvido no banco de dados (`is_resolved = true`), atualizando o status na base relacional e retirando-o automaticamente do badge de pendências e da lista de alertas críticos do Dashboard.
+
+* **Especificação do Retorno (200 OK):**
+```json
+{
+  "message": "Alerta resolvido com sucesso",
+  "alert": {
+    "id": "alert_1",
+    "sectorId": "setor_a",
+    "title": "Umidade baixa no Setor A",
+    "description": "Níveis abaixo de 15%. Irrigação de emergência recomendada.",
+    "severity": "critical",
+    "isResolved": true,
+    "createdAt": "2026-10-27T22:00:00.000Z",
+    "timestamp": "2026-10-27T22:00:00.000Z"
+  }
+}
+```
+
+---
+
+#### `DELETE /api/alerts/:id`
+Exclui fisicamente o registro do alerta da tabela relacional `alerts` no PostgreSQL.
+
+* **Especificação do Retorno (200 OK):**
+```json
+{
+  "message": "Alerta removido com sucesso",
+  "id": "alert_1"
 }
 ```
 

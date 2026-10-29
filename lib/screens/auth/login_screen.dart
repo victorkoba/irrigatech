@@ -2,12 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../core/theme/app_theme.dart';
 import '../../services/auth_service.dart';
-import '../dashboard/dashboard_screen.dart';
 import 'auth_widgets.dart';
-import 'register_screen.dart';
 
 class LoginScreen extends StatefulWidget {
-  /// Mensagem verde vinda da tela de cadastro ("Cadastro realizado!...").
+  /// Mensagem opcional de feedback na tela de login.
   final String? initialMessage;
 
   const LoginScreen({super.key, this.initialMessage});
@@ -55,25 +53,13 @@ class _LoginScreenState extends State<LoginScreen> {
     if (!mounted) return;
 
     if (ok) {
-  // O app.dart troca para o app completo sozinho (via AuthService).
+      // O app.dart troca para o app completo sozinho (via AuthService).
       return;
     }
 
     setState(() {
       _loading = false;
       _error = auth.errorMessage ?? 'Não foi possível entrar. Verifique e-mail e senha.';
-    });
-  }
-
-  Future<void> _openRegister() async {
-    final message = await Navigator.push<String>(
-      context,
-      MaterialPageRoute(builder: (_) => const RegisterScreen()),
-    );
-    if (!mounted || message == null) return;
-    setState(() {
-      _message = message;
-      _error = null;
     });
   }
 
@@ -141,21 +127,22 @@ class _LoginScreenState extends State<LoginScreen> {
                       ),
                     ),
                     const SizedBox(height: 20),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      
-                      children: [
-                        const Text(
-                          'Não tem uma conta?',
-                          style: TextStyle(color: AppColors.onSurfaceVariant),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: const [
+                        Icon(
+                          Icons.admin_panel_settings_outlined,
+                          size: 16,
+                          color: AppColors.onSurfaceVariant,
                         ),
-                        TextButton(
-                          onPressed: _loading ? null : _openRegister,
-                          child: const Text(
-                            'Cadastre-se',
+                        SizedBox(width: 6),
+                        Flexible(
+                          child: Text(
+                            'Novos usuários são cadastrados exclusivamente pelo usuário ADMIN.',
+                            textAlign: TextAlign.center,
                             style: TextStyle(
-                              color: AppColors.primaryContainer,
-                              fontWeight: FontWeight.w700,
+                              fontSize: 12,
+                              color: AppColors.onSurfaceVariant,
                             ),
                           ),
                         ),
