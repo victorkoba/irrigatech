@@ -12,6 +12,7 @@ const sectorRoutes = require('./routes/sectorRoutes');
 const irrigationRoutes = require('./routes/irrigationRoutes');
 const monitoringRoutes = require('./routes/monitoringRoutes');
 const reportRoutes = require('./routes/reportRoutes');
+const alertRoutes = require('./routes/alertRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -45,6 +46,7 @@ app.use('/api/sectors', sectorRoutes);
 app.use('/api/irrigation', irrigationRoutes);
 app.use('/api/monitoring', monitoringRoutes);
 app.use('/api/reports', reportRoutes);
+app.use('/api/alerts', alertRoutes);
 
 // Fallback 404 (precisa ficar por último)
 app.use((req, res) => {

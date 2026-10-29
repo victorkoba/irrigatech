@@ -4,6 +4,9 @@
 -- ==========================================================
 
 -- Drop tables if they exist (for clean initialization)
+DROP TABLE IF EXISTS dashboard_hourly_snapshots CASCADE;
+DROP TABLE IF EXISTS system_features CASCADE;
+DROP TABLE IF EXISTS system_metadata CASCADE;
 DROP TABLE IF EXISTS weekly_consumption CASCADE;
 DROP TABLE IF EXISTS productivity_metrics CASCADE;
 DROP TABLE IF EXISTS irrigation_events CASCADE;
@@ -13,15 +16,37 @@ DROP TABLE IF EXISTS sectors CASCADE;
 DROP TABLE IF EXISTS automation_settings CASCADE;
 DROP TABLE IF EXISTS users CASCADE;
 
+-- 0.1 Metadados e Descrições Oficiais do Sistema
+CREATE TABLE system_metadata (
+    id SERIAL PRIMARY KEY,
+    summary_description TEXT NOT NULL,
+    expected_benefits TEXT NOT NULL,
+    detailed_description TEXT NOT NULL,
+    status_card_description TEXT NOT NULL,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 0.2 Catálogo de Funcionalidades Salvas no Banco
+CREATE TABLE system_features (
+    id VARCHAR(50) PRIMARY KEY,
+    module VARCHAR(50) NOT NULL,
+    title VARCHAR(150) NOT NULL,
+    description TEXT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
 -- 0. Users & Authentication
 CREATE TABLE users (
     id SERIAL PRIMARY KEY,
     name VARCHAR(100) NOT NULL,
     email VARCHAR(150) UNIQUE NOT NULL,
     password_hash VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL DEFAULT 'operator',
+    role VARCHAR(50) NOT NULL DEFAULT 'Operador' CHECK (role IN ('ADMIN', 'Operador')),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE UNIQUE INDEX idx_users_single_master_admin ON users (role) WHERE role = 'ADMIN';
 
 -- 1. Automation & System Settings
 CREATE TABLE automation_settings (
@@ -44,8 +69,12 @@ CREATE TABLE sectors (
     crop VARCHAR(100) DEFAULT 'Milho',
     status VARCHAR(20) NOT NULL DEFAULT 'idle', -- 'irrigating', 'idle', 'error'
     flow_rate NUMERIC(6, 2) NOT NULL DEFAULT 0.00, -- m³/h
+    energy_consumption NUMERIC(8, 2) NOT NULL DEFAULT 35.00, -- kWh
     moisture NUMERIC(5, 2) NOT NULL DEFAULT 45.00, -- %
     temperature NUMERIC(5, 2) NOT NULL DEFAULT 28.00, -- °C
+    water_alert_threshold NUMERIC(8, 2) NOT NULL DEFAULT 80.00,
+    energy_alert_threshold NUMERIC(8, 2) NOT NULL DEFAULT 100.00,
+    temperature_alert_threshold NUMERIC(5, 2) NOT NULL DEFAULT 35.00,
     alert_message VARCHAR(255),
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
@@ -58,21 +87,46 @@ CREATE TABLE sensor_readings (
     moisture NUMERIC(5, 2) NOT NULL,
     temperature NUMERIC(5, 2) NOT NULL,
     precipitation NUMERIC(5, 2) NOT NULL DEFAULT 0.00,
+    water_consumption NUMERIC(8, 2) NOT NULL DEFAULT 45.00,
+    energy_consumption NUMERIC(8, 2) NOT NULL DEFAULT 42.00,
+    efficiency NUMERIC(5, 2) NOT NULL DEFAULT 94.00,
     recorded_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
 -- Index for fast time-series queries
 CREATE INDEX idx_sensor_readings_sector_time ON sensor_readings(sector_id, recorded_at DESC);
 
--- 4. Alerts
+-- 4. Alerts (Gerados quando Água, Energia e/ou Temperatura do Setor estão muito altas)
 CREATE TABLE alerts (
     id VARCHAR(50) PRIMARY KEY,
     sector_id VARCHAR(50) REFERENCES sectors(id) ON DELETE SET NULL,
     title VARCHAR(150) NOT NULL,
     description TEXT NOT NULL,
     severity VARCHAR(20) NOT NULL DEFAULT 'warning', -- 'critical', 'warning', 'info'
+    metric_type VARCHAR(30) DEFAULT 'threshold',
+    water_value NUMERIC(8, 2),
+    energy_value NUMERIC(8, 2),
+    temperature_value NUMERIC(5, 2),
     is_resolved BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+);
+
+-- 4.1 Dashboard Hourly Snapshots (Média de 1 em 1 hora, estática durante 59 min)
+CREATE TABLE dashboard_hourly_snapshots (
+    id SERIAL PRIMARY KEY,
+    avg_water_consumption NUMERIC(8, 2) NOT NULL DEFAULT 45.00,
+    avg_energy_consumption NUMERIC(8, 2) NOT NULL DEFAULT 42.00,
+    avg_temperature NUMERIC(5, 2) NOT NULL DEFAULT 27.50,
+    avg_moisture NUMERIC(5, 2) NOT NULL DEFAULT 48.00,
+    avg_efficiency NUMERIC(5, 2) NOT NULL DEFAULT 94.00,
+    water_trend VARCHAR(80) DEFAULT 'Média consolidada (última 1h)',
+    energy_trend VARCHAR(80) DEFAULT 'Média consolidada (última 1h)',
+    efficiency_trend VARCHAR(80) DEFAULT 'Ciclo de 60 min (estático por 59 min)',
+    samples_count INT NOT NULL DEFAULT 1,
+    window_start TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (NOW() - INTERVAL '1 hour'),
+    window_end TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    calculated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+    next_update_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT (NOW() + INTERVAL '1 hour')
 );
 
 -- 5. Irrigation History & Events
@@ -112,8 +166,8 @@ CREATE TABLE weekly_consumption (
 
 -- Default Users (Password: 123456)
 INSERT INTO users (name, email, password_hash, role) VALUES
-('Operador IrrigaTech', 'operador@irrigatech.com', '$2b$10$iCAmiKUfYuCnsZqcu9xeVO0wPMhAzVDHR4RNPI0H0e2ALNUiHZ2F2', 'operator'),
-('Administrador', 'admin@irrigatech.com', '$2b$10$iCAmiKUfYuCnsZqcu9xeVO0wPMhAzVDHR4RNPI0H0e2ALNUiHZ2F2', 'admin');
+('Victor Koba', 'victor@gmail.com', '$2b$10$iCAmiKUfYuCnsZqcu9xeVO0wPMhAzVDHR4RNPI0H0e2ALNUiHZ2F2', 'ADMIN'),
+('Operador IrrigaTech', 'operador@irrigatech.com', '$2b$10$iCAmiKUfYuCnsZqcu9xeVO0wPMhAzVDHR4RNPI0H0e2ALNUiHZ2F2', 'Operador');
 
 -- Settings
 INSERT INTO automation_settings (is_system_active, operation_mode, min_moisture_trigger, max_moisture_cutoff, next_irrigation_time, next_irrigation_sectors, daily_progress_pct)

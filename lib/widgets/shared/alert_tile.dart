@@ -5,11 +5,13 @@ import '../../models/alert_model.dart';
 class AlertTile extends StatelessWidget {
   final AlertModel alert;
   final VoidCallback onVerify;
+  final VoidCallback? onDismiss;
 
   const AlertTile({
     super.key,
     required this.alert,
     required this.onVerify,
+    this.onDismiss,
   });
 
   @override
@@ -68,6 +70,16 @@ class AlertTile extends StatelessWidget {
                         ),
                       ),
                       const SizedBox(width: 8),
+                      if (onDismiss != null) ...[
+                        IconButton(
+                          icon: const Icon(Icons.check_circle_outline_rounded, size: 20, color: AppColors.primaryContainer),
+                          tooltip: 'Resolver alerta',
+                          padding: EdgeInsets.zero,
+                          constraints: const BoxConstraints(),
+                          onPressed: onDismiss,
+                        ),
+                        const SizedBox(width: 6),
+                      ],
                       TextButton(
                         onPressed: onVerify,
                         style: TextButton.styleFrom(

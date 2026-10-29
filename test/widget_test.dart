@@ -39,7 +39,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Verifica elementos fundamentais do Dashboard
-    expect(find.text('IrrigaTech'), findsWidgets);
+    expect(find.text('Dashboard'), findsWidgets);
     expect(find.text('STATUS GERAL'), findsOneWidget);
     expect(find.text('PRÓXIMA IRRIGAÇÃO'), findsOneWidget);
   });

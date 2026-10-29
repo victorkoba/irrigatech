@@ -21,7 +21,7 @@ class DashboardScreen extends StatelessWidget {
             Icon(Icons.agriculture_rounded, color: AppColors.primaryContainer, size: 28),
             SizedBox(width: 10),
             Text(
-              'IrrigaTech',
+              'Dashboard',
               style: TextStyle(
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
@@ -54,7 +54,7 @@ class DashboardScreen extends StatelessWidget {
             ),
             onPressed: () {
               ScaffoldMessenger.of(context).showSnackBar(
-                SnackBar(content: Text('Você tem ${alerts.length} alertas pendentes.')),
+                SnackBar(content: Text('Você tem ${alerts.length} alertas críticos no momento.')),
               );
             },
           ),
@@ -66,7 +66,7 @@ class DashboardScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            // Status Geral Banner
+            // 1. Status Geral Banner (com descrição do controle definido pelo cliente)
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -84,30 +84,42 @@ class DashboardScreen extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Text(
-                        'STATUS GERAL',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          letterSpacing: 0.5,
-                          color: AppColors.onSurfaceVariant,
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'STATUS GERAL',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            letterSpacing: 0.5,
+                            color: AppColors.onSurfaceVariant,
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        service.isSystemActive ? 'SISTEMA ATIVO' : 'SISTEMA SUSPENSO',
-                        style: TextStyle(
-                          fontSize: 22,
-                          fontWeight: FontWeight.w700,
-                          color: service.isSystemActive ? AppColors.primaryContainer : AppColors.error,
-                          letterSpacing: -0.5,
+                        const SizedBox(height: 4),
+                        Text(
+                          service.isSystemActive ? 'SISTEMA ATIVO' : 'SISTEMA SUSPENSO',
+                          style: TextStyle(
+                            fontSize: 22,
+                            fontWeight: FontWeight.w700,
+                            color: service.isSystemActive ? AppColors.primaryContainer : AppColors.error,
+                            letterSpacing: -0.5,
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(height: 6),
+                        Text(
+                          service.statusCardDescription,
+                          style: const TextStyle(
+                            fontSize: 12,
+                            color: AppColors.onSurfaceVariant,
+                            height: 1.3,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(width: 12),
                   Container(
                     width: 56,
                     height: 56,
@@ -140,7 +152,7 @@ class DashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Alertas Críticos Card
+            // 2. Alertas Críticos Condicionais (Apenas Água, Energia e Temperatura muito altos nos Setores)
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -165,27 +177,39 @@ class DashboardScreen extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
                         decoration: BoxDecoration(
-                          color: AppColors.errorContainer,
+                          color: alerts.isNotEmpty
+                              ? AppColors.errorContainer
+                              : AppColors.primaryFixed,
                           borderRadius: BorderRadius.circular(20),
                         ),
                         child: Text(
-                          '${alerts.length} Urgentes',
-                          style: const TextStyle(
+                          alerts.isNotEmpty ? '${alerts.length} Urgentes' : 'Normal',
+                          style: TextStyle(
                             fontSize: 11,
                             fontWeight: FontWeight.w600,
-                            color: AppColors.onErrorContainer,
+                            color: alerts.isNotEmpty
+                                ? AppColors.onErrorContainer
+                                : AppColors.primaryContainer,
                           ),
                         ),
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Exibidos apenas quando algum setor do monitoramento registrar consumo/valor muito alto de água, energia e/ou temperatura.',
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: AppColors.onSurfaceVariant,
+                    ),
                   ),
                   const SizedBox(height: 12),
                   if (alerts.isEmpty)
                     const Padding(
                       padding: EdgeInsets.symmetric(vertical: 8),
                       child: Text(
-                        'Nenhum alerta crítico no momento.',
-                        style: TextStyle(color: AppColors.onSurfaceVariant),
+                        'Nenhum alerta crítico no momento. Todos os setores operam dentro dos limites normais.',
+                        style: TextStyle(color: AppColors.onSurfaceVariant, fontSize: 13),
                       ),
                     )
                   else
@@ -195,7 +219,18 @@ class DashboardScreen extends StatelessWidget {
                         child: AlertTile(
                           alert: alert,
                           onVerify: () {
-                            service.setTabIndex(2); // Jump to Irrigation Control
+                            service.setTabIndex(1); // Jump to Monitoring
+                          },
+                          onDismiss: () {
+                            service.dismissAlert(alert.id);
+                            ScaffoldMessenger.of(context).hideCurrentSnackBar();
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(
+                                backgroundColor: AppColors.primaryContainer,
+                                content: Text('Alerta "${alert.title}" resolvido no banco de dados.'),
+                                duration: const Duration(seconds: 3),
+                              ),
+                            );
                           },
                         ),
                       );
@@ -205,7 +240,7 @@ class DashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // Próxima Irrigação Card (Stitch Dark Green Banner)
+            // 3. Próxima Irrigação Card (Resgatado do Banco de Dados / Configurado no Controle)
             Container(
               padding: const EdgeInsets.all(20),
               decoration: BoxDecoration(
@@ -227,28 +262,52 @@ class DashboardScreen extends StatelessWidget {
                   Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text(
-                        'PRÓXIMA IRRIGAÇÃO',
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.primaryFixedDim,
-                          letterSpacing: 0.5,
-                        ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          const Text(
+                            'PRÓXIMA IRRIGAÇÃO',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primaryFixedDim,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                          InkWell(
+                            onTap: () {
+                              service.setTabIndex(2); // Jump to Irrigation Control
+                            },
+                            child: Row(
+                              children: const [
+                                Icon(Icons.edit_calendar_rounded, size: 14, color: AppColors.primaryFixed),
+                                SizedBox(width: 4),
+                                Text(
+                                  'Agendar no Controle',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w600,
+                                    color: AppColors.primaryFixed,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                       const SizedBox(height: 8),
-                      const Text(
-                        '14:30',
-                        style: TextStyle(
+                      Text(
+                        service.nextIrrigationTime,
+                        style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.w700,
                           color: AppColors.onPrimary,
                         ),
                       ),
                       const SizedBox(height: 4),
-                      const Text(
-                        'Setores B e D (Milho)',
-                        style: TextStyle(
+                      Text(
+                        service.nextIrrigationSectors,
+                        style: const TextStyle(
                           fontSize: 14,
                           color: AppColors.primaryFixed,
                         ),
@@ -256,8 +315,8 @@ class DashboardScreen extends StatelessWidget {
                       const SizedBox(height: 16),
                       Row(
                         mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: const [
-                          Text(
+                        children: [
+                          const Text(
                             'Progresso Diário',
                             style: TextStyle(
                               fontSize: 12,
@@ -265,8 +324,8 @@ class DashboardScreen extends StatelessWidget {
                             ),
                           ),
                           Text(
-                            '65%',
-                            style: TextStyle(
+                            '${service.dailyProgressPct.toInt()}%',
+                            style: const TextStyle(
                               fontSize: 12,
                               fontWeight: FontWeight.w600,
                               color: AppColors.onPrimary,
@@ -278,7 +337,7 @@ class DashboardScreen extends StatelessWidget {
                       ClipRRect(
                         borderRadius: BorderRadius.circular(8),
                         child: LinearProgressIndicator(
-                          value: 0.65,
+                          value: (service.dailyProgressPct / 100.0).clamp(0.0, 1.0),
                           minHeight: 8,
                           backgroundColor: Colors.white.withValues(alpha: 0.15),
                           valueColor: const AlwaysStoppedAnimation<Color>(AppColors.primaryFixed),
@@ -291,34 +350,67 @@ class DashboardScreen extends StatelessWidget {
             ),
             const SizedBox(height: 16),
 
-            // KPI Cards Grid
+            // 4. Demais Cards (Média Consolidada de 1 em 1 hora do Banco de Dados — Estático por 59 min)
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                const Expanded(
+                  child: Text(
+                    'MÉDIA CONSOLIDADA DO BANCO (1 EM 1 HORA)',
+                    style: TextStyle(
+                      fontSize: 11,
+                      fontWeight: FontWeight.w700,
+                      letterSpacing: 0.5,
+                      color: AppColors.onSurfaceVariant,
+                    ),
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+                  decoration: BoxDecoration(
+                    color: AppColors.secondary.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    'Estático (${service.hourlyMinutesRemaining} min)',
+                    style: const TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w600,
+                      color: AppColors.secondary,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+
             MetricCard(
               title: 'Consumo de Água',
-              value: '1.2k',
+              value: service.hourlyWaterValue,
               unit: 'm³/h',
-              trendText: '-5% vs ontem',
+              trendText: service.hourlyWaterTrend,
               icon: Icons.water_drop_rounded,
               iconColor: AppColors.secondary,
               trendColor: AppColors.secondary,
-              trendIcon: Icons.trending_down_rounded,
+              trendIcon: Icons.schedule_rounded,
             ),
             const SizedBox(height: 12),
             MetricCard(
               title: 'Consumo de Energia',
-              value: '450',
+              value: service.hourlyEnergyValue,
               unit: 'kWh',
-              trendText: '+2% vs ontem',
+              trendText: service.hourlyEnergyTrend,
               icon: Icons.bolt_rounded,
               iconColor: AppColors.warningOrange,
               trendColor: AppColors.warningOrange,
-              trendIcon: Icons.trending_up_rounded,
+              trendIcon: Icons.schedule_rounded,
             ),
             const SizedBox(height: 12),
             MetricCard(
               title: 'Eficiência Geral',
-              value: '94',
+              value: service.hourlyEfficiencyValue,
               unit: '%',
-              trendText: 'Excelente',
+              trendText: service.hourlyEfficiencyTrend,
               icon: Icons.speed_rounded,
               iconColor: AppColors.primaryContainer,
               trendColor: AppColors.primaryContainer,
